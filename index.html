@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>微信配置</title>
+    <link href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//cdn.bootcss.com/toastr.js/2.1.3/toastr.min.css" rel="stylesheet">
+    <!--TODO-->
+    <link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/1.1.2/weui.min.css">
+    <link href="http://localhost:8080/css/main.css" rel="stylesheet">
+    <link href="http://localhost:8080/css/wechat.css" rel="stylesheet">
+    <link href="http://localhost:8080/css/wechatRegister.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.5.2/animate.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+    <script src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!--<script src="//cdn.bootcss.com/1000hz-bootstrap-validator/0.11.9/validator.min.js"></script>-->
+    <script src="//cdn.bootcss.com/toastr.js/2.1.3/toastr.min.js"></script>
+    <style>
+        .step-card {
+            min-height: 667px;
+        }
+        .el-form-item__label {
+            /*line-height: 1rem;*/
+        }
+        .wechatDemo-card .el-card__body {
+            height: 667px;
+            background: #fafafa;
+            padding: 0;
+        }
+        .wechatDemo-card header {
+            padding: 5px 10px;
+            font-size: 17px;
+            color: #fff;
+            background: #333;
+        }
+        .surveyArea {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <h2 style="display: inline-block">微信配置</h2>
+        <hr style="margin: 5px 0">
+    </div>
+    <div id="app">
+        <el-steps class="mt1 mb2" :active="active" finish-status="success" align-center>
+            <el-step title="登记步骤设置"></el-step>
+            <el-step title="登记结果设置"></el-step>
+            <el-step title="通用元素设置"></el-step>
+            <el-step title="完成"></el-step>
+        </el-steps>
+
+        <el-row>
+            <el-col :span="11" :offset="1">
+                <el-row v-if="active===0">
+                    <el-col :span="6">
+                        <thumb :step-finished-list="stepFinishedList"></thumb>
+                    </el-col>
+                    <el-col :span="17" :offset="1">
+                        <el-card class="step-card mb1">
+                            <div slot="header" class="clearfix">
+                                <h4>页面{{stepFinishedList.length < 4 ? stepFinishedList.length + 1 : 4}}</h4>
+                                <span>步骤{{stepFinishedList.length < 4 ? stepFinishedList.length + 1 : 4}}类型：</span>
+                                <el-select v-model="currentStep" placeholder="内容选择" @change="stepPageChange">
+                                    <el-option v-for="item in stepOptions"
+                                               :key="item.name"
+                                               :label="item.label"
+                                               :value="item.name"
+                                               :disabled="item.disabled">
+                                    </el-option>
+                                </el-select>
+                            </div>
+                            <step :items="currentItems" :step="currentStep" ref="step"></step>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <el-row v-if="active===1">
+                    <el-col :span="6">
+                        &nbsp;
+                    </el-col>
+                    <el-col :span="17" :offset="1">
+                        <el-card class="step-card mb1">
+                            <div slot="header" class="clearfix">
+                                <h4>登记完成状态</h4>
+                                <span>状态类型：</span>
+                                <el-select v-model="currentStep" placeholder="内容选择" @change="stepPageChange">
+                                    <el-option v-for="item in statusOptions"
+                                               :key="item.value"
+                                               :label="item.label"
+                                               :value="item.value"
+                                               :disabled="item.disabled">
+                                    </el-option>
+                                </el-select>
+                            </div>
+                            <step :items="currentItems" :step="currentStep"></step>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <el-row v-if="active===2">
+                    <el-col :span="6">
+                        &nbsp;
+                    </el-col>
+                    <el-col :span="17" :offset="1">
+                        <el-card class="step-card mb1">
+                            <div slot="header" class="clearfix">
+                                <h4>通用元素设置</h4>
+                            </div>
+                            <step :items="currentItems" :step="currentStep"></step>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <el-row v-if="active===3">
+                    <el-col :span="6">
+                        &nbsp;
+                    </el-col>
+                    <el-col :span="17" :offset="1">
+                        <el-card class="step-card mb1">
+                            微信配置完成！
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="6">
+                        &nbsp;
+                    </el-col>
+                    <el-col :span="17" :offset="1">
+                        <el-button type="primary" @click="addStep">添加步骤</el-button>
+                        <el-button class="float-right" @click="next">步骤设置好了</el-button>
+                    </el-col>
+                </el-row>
+            </el-col>
+            <el-col :span="8" :offset="2">
+                <el-card class="wechatDemo-card">
+                    <header>
+                        <div class="weui-flex">
+                            <div class="weui-flex__item"><span><i class="el-icon-arrow-left"></i>返回</span></div>
+                            <!--<div class="weui-flex__item text-center">{{currentItems.title.value}}</div>-->
+                            <div class="weui-flex__item text-right"><i class="el-icon-more"></i></div>
+                        </div>
+                    </header>
+                    <nav>
+                        <section class="weui-navbar">
+                            <!--<section class="weui-navbar__item current">{{currentItems.desc.value}}</section>-->
+                        </section>
+                    </nav>
+                    <section>
+                        <form id="mobilePhoneForm">
+                            <div class="weui-cells weui-cells_form">
+                                <div class="weui-cell ">
+                                    <div class="weui-cell__hd"><span class="weui-label required "
+                                                                      for="mobilePhone">手机号</span></div>
+                                    <div class="weui-cell__bd"><input class="weui-input" type="text" name="mobilePhone"
+                                                                      id="mobilePhone" pattern="^1[34578]\d{9}$"
+                                                                      notmatchtips="请输入正确的手机号" placeholder="请输入手机号"
+                                                                      emptytips="请输入手机号" required="" value=""></div>
+                                    <div class="weui-cell__ft"><i class="weui-icon-warn"></i></div>
+                                </div>
+                                <div class="weui-cell weui-cell_vcode">
+                                    <div class="weui-cell__hd"><span class="weui-label required "
+                                                                      for="verifyCode">验证码</span></div>
+                                    <div class="weui-cell__bd"><input class="weui-input" type="text" name="verifyCode"
+                                                                      id="verifyCode" placeholder="请输入验证码"
+                                                                      emptytips="请输入验证码" required="" value=""></div>
+                                    <div class="weui-cell__ft">
+                                        <button class="weui-vcode-btn" id="verify" type="button">获取验证码</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="button-sp-area">
+                            <a class="weui-btn weui-btn_primary">下一步</a>
+                        </div>
+                    </section>
+                    <div class="weui-footer">
+                        <p class="weui-footer__text" id="footer__contact">咨询服务热线: 1234567890</p>
+                        <p class="weui-footer__text"></p>
+                    </div>
+                </el-card>
+            </el-col>
+        </el-row>
+
+    </div>
+
+    <template id="stepTmpl">
+        <div id="step">
+            <transition name="custom-classes-transition" enter-active-class="animated fadeIn" leave-active-class="animated"
+                        :duration="{ leave: 0 }">
+                <el-form ref="form" label-width="80px"  :key="step">
+                    <el-form-item :label="item.label" v-for="item in items" :key="item.name" :required="item.required">
+                        <el-radio-group v-if="item.boolean" v-model="item.value">
+                            <el-radio label="是"></el-radio>
+                            <el-radio label="否"></el-radio>
+                        </el-radio-group>
+                        <!--<el-select v-model="item.value" placeholder="请选择" v-else-if="item.select">
+                            <el-option v-for="item in booleanOptions"
+                                       :key="item.value"
+                                       :label="item.label"
+                                       :value="item.value"></el-option>
+                        </el-select>-->
+                        <el-color-picker v-model="item.value" v-else-if="item.inputType==='color'"></el-color-picker>
+                        <el-input v-model="item.value" :type="item.inputType"  :class="item.title" v-else></el-input>
+                    </el-form-item>
+
+                    <div v-show="step==='basicInfo'">
+                        <hr>
+                        <span class="mr1">信息项</span>
+                        <el-button type="default" class="addQBtn"  icon="el-icon-plus" circle @click="addBcOpt"></el-button>
+                        <div v-for="(opt, index) in bcOptTmpl" class="mt1" :key="opt.key">
+                            <span class="mr1">{{ index+1 }}</span>
+                            <el-select v-model="opt.value" placeholder="请选择" style="width: 120px" class="mr1">
+                                <el-option v-for="item in basicInfoOptions"
+                                           :key   ="item.name"
+                                           :label ="item.label"
+                                           :value="item.name"
+                                           :disabled="item.disabled">
+                                </el-option>
+                            </el-select>
+                            <el-checkbox v-model="opt.required" class="requiredItem mr1">必填</el-checkbox>
+                            <i class="el-icon-caret-top mr1" @click="moveUp(index, 'bcOptTmpl')"></i>
+                            <i class="el-icon-caret-bottom mr1" @click="moveDown(index, 'bcOptTmpl')"></i>
+                            <i class="el-icon-delete" @click="removeBcOpt(index)"></i>
+                        </div>
+                    </div>
+                    <div v-show="step==='survey'">
+                        <hr>
+                        <span class="mr1">题目</span>
+                        <el-button type="default" class="addQBtn"  icon="el-icon-plus" circle @click="addQ"></el-button>
+                        <div v-for="(opt, index) in qTmpl" class="mt1" :key="opt.key">
+                            <span class="mr1">第{{ index+1 }}题</span>
+                            <i class="el-icon-caret-top mr1" @click="moveUp(index, 'qTmpl')"></i>
+                            <i class="el-icon-caret-bottom mr1" @click="moveDown(index, 'qTmpl')"></i>
+                            <i class="el-icon-delete" @click="removeQ(index)"></i>
+                            <div class="surveyArea mt1 p1">
+                                <el-form-item label="性质">
+                                    <el-radio-group  v-model="opt.count">
+                                        <el-radio class="qType" label="1">单选</el-radio>
+                                        <el-radio class="qType" label="2">多选</el-radio>
+                                    </el-radio-group>
+                                    <el-checkbox-group  v-model="opt.attr">
+                                        <el-checkbox label="必填"></el-checkbox>
+                                        <el-checkbox label="是否增加自填选项"></el-checkbox>
+                                    </el-checkbox-group>
+                                 </el-form-item>
+                                <el-form-item label="标题">
+                                    <el-input class="qTitle" v-model="opt.title"></el-input>
+                                </el-form-item>
+                                <div class="surveyArea_ansewer" v-for="(j, k) in opt.answer" :key="j.key">
+                                    <el-form-item label="选项">
+                                        <el-input v-model="j.text" class="qAnswer" style="width: 150px"></el-input>
+                                        <i class="el-icon-plus" @click="addA(index, k)"></i>
+                                        <i class="el-icon-delete" @click="removeA(index, k)"></i>
+                                    </el-form-item>
+                                </div>
+                            </div>
+                         </div>
+                     </div>
+                    <div v-show="step==='pass'">
+                        <span class="mr1">模板类型</span>
+                        <el-select v-model="form.passTmplChoose" placeholder="请选择" @change="">
+                            <el-option label="常规模板" value="passNormal"></el-option>
+                            <el-option label="自定义背景证件图" value="passWithBg"></el-option>
+                        </el-select>
+                    </div>
+                </el-form>
+            </transition>
+        </div>
+    </template>
+    <template id="thumbTmpl">
+            <div id="thumb" v-if="stepFinishedList.length">
+                    <el-card class="text-center mb1" v-for="(item,index) in stepFinishedList" :key="item.key" @click="showStep">
+                        <h4>{{ index+1 }}</h4>
+                        <h4>{{ item.label }}</h4>
+                        <i class="el-icon-caret-top" @click="moveUp(index, 'stepFinishedList')"></i>
+                        <i class="el-icon-caret-bottom" @click="moveDown(index, 'stepFinishedList')"></i>
+                        <i class="el-icon-delete" @click="removeStep(index)"></i>
+                    </el-card>
+            </div>
+        <span v-else>&nbsp;</span>
+    </template>
+</div>
+
+<script>
+    var itemOptions = {
+        "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+        "desc": {"name": "desc", "label": "页面描述", "required": true, "value": "" },
+        "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+        "adPath": {"name": "adPath", "label": "广告图地址", "value": "" },
+        "ocr": {"name": "ocr", "label": "是否进行名片识别", "select": true, "boolean": true, "required": true, "value": "" },
+        "successTipTitle": {"name": "successTipTitle", "label": "提示语标题", "value": ""},
+        "successTip": {"name": "successTip", "label": "提示语", "value": ""},
+        "bgColor": {"name": "bgColor", "label": "主区域背景颜色", "inputType": "color", "value": "#000"},
+        "fontColor": {"name": "fontColor", "label": "主区域字体颜色", "inputType": "color", "value": ""},
+        "passBgPath": {"name": "passBgPath", "label": "背景图地址", "value": ""},
+        "footer": {"name": "footer", "label": "页脚", "value": ""},
+        "customExpoTitle": {"name": "customExpoTitle", "label": "分享标题", "value": ""},
+        "customExpoDesc": {"name": "customExpoDesc", "label": "分享描述", "value": ""},
+        "customExpoLogo": {"name": "customExpoLogo", "label": "分享图片地址", "value": ""}
+    };
+    new Vue({
+        el: "#app",
+
+        data: function() {
+            return {
+                active: 0,
+                showMoveBtn: true,
+                stepOptions: [
+                    {name: 'mobilePhone', label: '手机填写'},
+                    {name: 'bizCard', label: '名片上传'},
+                    {name: 'basicInfo', label: '个人信息'},
+                    {name: 'survey', label: '问卷调查'}
+                ],
+                mobilePhoneItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "desc": {"name": "desc", "label": "页面描述", "required": true, "value": "" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "adPath": {"name": "adPath", "label": "广告图地址", "value": "" }
+                },
+                bizCardItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "desc": {"name": "desc", "label": "页面描述", "required": true, "value": "" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "adPath": {"name": "adPath", "label": "广告图地址", "value": "" },
+                    "ocr": {"name": "ocr", "label": "是否进行名片识别", "select": true, "boolean": true, "required": true, "value": "" }
+                },
+                basicInfoItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "desc": {"name": "desc", "label": "页面描述", "required": true, "value": "" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "adPath": {"name": "adPath", "label": "广告图地址", "value": "" }
+                },
+                surveyItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "desc": {"name": "desc", "label": "页面描述", "required": true, "value": "" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "adPath": {"name": "adPath", "label": "广告图地址", "value": "" }
+                },
+
+                statusOptions: [
+                    {value: 'pending', label: '待审核'},
+                    {value: 'done', label: '信息已登记'},
+                    {value: 'pass', label: '已验证'}
+                ],
+                pendingItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "adPath": {"name": "adPath", "label": "广告图地址", "value": "" },
+                    "successTip": {"name": "successTip", "label": "提示语", "value": ""}
+                },
+                doneItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "adPath": {"name": "adPath", "label": "广告图地址", "value": "" },
+                    "successTipTitle": {"name": "successTipTitle", "label": "提示语标题", "value": ""},
+                    "successTip": {"name": "successTip", "label": "提示语", "value": ""},
+                    "bgColor": {"name": "bgColor", "label": "主区域背景颜色", "inputType": "color", "value": "#000"},
+                    "fontColor": {"name": "fontColor", "label": "主区域字体颜色", "inputType": "color", "value": ""}
+                },
+                passNormalItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "adPath": {"name": "adPath", "label": "广告图地址", "value": "" },
+                    "successTip": {"name": "successTip", "label": "提示语", "value": ""}
+                },
+                passWithBgItems: {
+                    "title": {"name": "title", "label": "页面标题", "required": true, "value": "观众预登记" },
+                    "bannerPath": {"name": "bannerPath", "label": "banner图地址", "value": "" },
+                    "successTipTitle": {"name": "successTipTitle", "label": "提示语标题", "value": ""},
+                    "passBgPath": {"name": "passBgPath", "label": "背景图地址", "value": ""}
+                },
+
+                miscItems: {
+                    "footer": {"name": "footer", "label": "页脚", "value": ""},
+                    "customExpoTitle": {"name": "customExpoTitle", "label": "分享标题", "value": ""},
+                    "customExpoDesc": {"name": "customExpoDesc", "label": "分享描述", "value": ""},
+                    "customExpoLogo": {"name": "customExpoLogo", "label": "分享图片地址", "value": ""}
+                },
+
+                currentItems: {},
+                currentStep: 'mobilePhone',
+
+                stepFinishedList: [{
+                    name: 'mobilePhone',
+                    label: '手机填写',
+                    key: 1
+                }]
+            }
+        },
+
+        watch: {
+            currentStep: function() {
+                Vue.set(this.stepFinishedList, this.stepFinishedList.length-1,  {
+                    name: this.currentStep,
+                    label: this.currentStep,
+                    key: Date.now()
+                })
+            },
+            stepFinishedList: function () {
+                var _this = this;
+                _this.stepOptions.forEach(function(item, index) {
+                    var tag = false;
+                    _this.stepFinishedList.forEach(function(j, k) {
+                        if (item.name === j.name) {
+                            Vue.set(_this.stepOptions[index], 'disabled', true);
+                            tag = true;
+                        }
+                    });
+                    if(!tag) {
+                        Vue.set(_this.stepOptions[index], 'disabled', false);
+                    }
+                });
+            }
+        },
+
+        methods: {
+            next: function(){
+                if (this.active++ > 2) this.active = 0;
+                if(this.active===1) {
+                    this.currentStep = 'done';
+                    this.currentItems = this.doneItems;
+                } else if(this.active===2) {
+                    this.currentStep = '';
+                    this.currentItems = this.miscItems;
+                }
+            },
+            stepPageChange: function(value) {
+                this.currentItems = this[value + 'Items'];
+                this.currentStep = value;
+            },
+            addStep: function() {
+                if(this.stepFinishedList.length < 4) {
+                    var _this = this;
+                    // TODO 取数组中相应值的label
+                    var finishedStep = this.currentStep;
+                    this.stepOptions.forEach(function(item,index) {
+                        if(finishedStep === item.name) {
+                            _this.stepFinishedList.push({
+                                name: finishedStep,
+                                label: item.label,
+                                key: Date.now()
+                            });
+                            // watch太慢下一个函数会取不到
+                            Vue.set(_this.stepOptions[index], 'disabled', true);
+                        }
+                    });
+
+                    for(var i = 0 ; i < this.stepOptions.length; i++ ) {
+                        var item = this.stepOptions[i];
+                        if(!item.disabled) {
+                            _this.currentStep = item.name;
+                            _this.currentItems = _this[_this.currentStep + 'Items'];
+                            return true;
+                        }
+                    }
+                }
+            }
+        },
+
+        mounted: function() {
+            this.$nextTick(function () {
+                this.currentItems = this.mobilePhoneItems;
+            })
+        },
+
+        components: {
+            'step': {
+                template: '#stepTmpl',
+                props: ['items', 'step'],
+                data: function() {
+                    return {
+                        form: {
+                            passTmplChoose: 'passTmpl'
+                        },
+                        basicInfoOptions: [
+                            {name: 'name', label: '姓名'},
+                            {name: 'mobilePhone', label: '手机'},
+                            {name: 'idNum', label: '身份证末十位'},
+                            {name: 'company', label: '公司'},
+                            {name: 'jobTitle', label: '职务'},
+                            {name: 'province', label: '省份'},
+                            {name: 'city', label: '城市'},
+                            {name: 'district', label: '地区'},
+                            {name: 'address', label: '地址'},
+                            {name: 'fax', label: '传真'},
+                            {name: 'email', label: '邮箱'},
+                            {name: 'website', label: '网址'}
+                        ],
+                        bcOptTmpl:  [
+                            {
+                                value: 'name',
+                                required: '',
+                                key: 1
+                            }
+                        ],
+                        qTmpl:  [
+                            {
+                                count: '1',
+                                attr: [],
+                                answer: [
+                                    {
+                                        text: '',
+                                        key: 1
+                                    },
+                                    {
+                                        text: '',
+                                        key: 2
+                                    }
+                                ],
+                                title: '',
+                                key: 1
+                            }
+                        ]
+                    }
+                },
+                watch: {
+                    bcOptTmpl: function () {
+                        var _this = this;
+                        _this.basicInfoOptions.forEach(function(item, index) {
+                            var tag = false;
+                            _this.bcOptTmpl.forEach(function(j, k) {
+                                if (item.name === j.value) {
+                                    Vue.set(_this.basicInfoOptions[index], 'disabled', true);
+                                    tag = true;
+                                }
+                            });
+                            if(!tag) {
+                                Vue.set(_this.basicInfoOptions[index], 'disabled', false);
+                            }
+                        });
+                    }
+                },
+                methods: {
+                    addBcOpt: function(id) {
+                        this.bcOptTmpl.push({
+                            value: '',
+                            required: '',
+                            key: Date.now()
+                        })
+                    },
+                    removeBcOpt: function(index) {
+                        this.bcOptTmpl.length > 1 ? this.bcOptTmpl.splice(index,1) : this.$message('至少有一个信息项');
+                    },
+
+                    addQ: function() {
+                        this.qTmpl.push({
+                            count: '1',
+                            attr: [],
+                            title: '',
+                            answer: [
+                                {
+                                    text: '',
+                                    key: 1
+                                },
+                                {
+                                    text: '',
+                                    key: 2
+                                }
+                            ],
+                            key: Date.now()
+                        })
+                    },
+                    removeQ: function(index) {
+                        this.qTmpl.length > 1 ? this.qTmpl.splice(index,1) : this.$message('至少有一条题目');
+                    },
+
+                    addA: function(QIndex, currentAIndex) {
+                        this.qTmpl[QIndex].answer.splice(currentAIndex+1 ,0,{
+                            key: Date.now()
+                        })
+                    },
+                    removeA: function(QIndex, currentAIndex) {
+                        this.qTmpl[QIndex].answer.length > 2 ?
+                            this.qTmpl[QIndex].answer.splice(currentAIndex, 1)
+                            : this.$message('至少有两个选项');
+                    },
+
+                    moveUp: function(index, tmpl) {
+                        if(index > 0) {
+                            var replaceOpt = this[tmpl][index-1];
+                            // 直接设置项不会触发视图更新，需要set
+                            Vue.set(this[tmpl], index-1, this[tmpl][index]);
+                            Vue.set(this[tmpl], index, replaceOpt)
+                        }
+                    },
+                    moveDown: function(index, tmpl) {
+                        if(index < this[tmpl].length-1) {
+                            var replaceOpt = this[tmpl][index+1];
+                            Vue.set(this[tmpl], index+1, this[tmpl][index]);
+                            Vue.set(this[tmpl], index, replaceOpt);
+                        }
+                    }
+                }
+            },
+            'thumb': {
+                template: '#thumbTmpl',
+                props: ['step-finished-list'],
+                methods: {
+                    moveUp: function(index, tmpl) {
+                        if(index > 0) {
+                            var replaceOpt = this[tmpl][index-1];
+                            // 直接设置项不会触发视图更新，需要set
+                            Vue.set(this[tmpl], index-1, this[tmpl][index]);
+                            Vue.set(this[tmpl], index, replaceOpt)
+                        }
+                    },
+                    moveDown: function(index, tmpl) {
+                        if(index < this[tmpl].length-1) {
+                            var replaceOpt = this[tmpl][index+1];
+                            Vue.set(this[tmpl], index+1, this[tmpl][index]);
+                            Vue.set(this[tmpl], index, replaceOpt);
+                        }
+                    },
+                    removeStep: function(index) {
+                        this.stepFinishedList.splice(index,1);
+                    },
+                    showStep: function() {
+
+                    }
+                }
+            }
+        }
+    });
+/*    var Ctor = Vue.extend(Main);
+    new Ctor().$mount('#app');*/
+</script>
+</body>
+</html>
